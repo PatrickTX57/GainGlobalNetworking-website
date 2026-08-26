@@ -100,6 +100,15 @@ const {
 
   .editorial { font-family: var(--font-editorial); font-weight: 300; }
   a { color: inherit; text-decoration: none; }
+  /* Inline text links (within copy/prose, not nav items or buttons): underlined, brand green. */
+  .text-link {
+    color: var(--forest); text-decoration: underline; text-underline-offset: 2px;
+    text-decoration-thickness: 1.5px; font-weight: 600;
+  }
+  .text-link:hover { color: var(--growth); }
+  /* On navy backgrounds, lime is the only green with enough contrast. */
+  .text-link.on-navy { color: var(--lime); }
+  .text-link.on-navy:hover { color: var(--growth); }
   img { max-width: 100%; display: block; }
   .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 56px; }
 
