@@ -1,0 +1,89 @@
+---
+// Web3Forms access key.
+// Get a free key at https://web3forms.com (enter your email, no account needed)
+// and either paste it here, or set PUBLIC_WEB3FORMS_ACCESS_KEY as an environment
+// variable in Netlify (Site settings -> Environment variables) and it will be
+// picked up automatically at build time.
+const WEB3FORMS_ACCESS_KEY =
+  import.meta.env.PUBLIC_WEB3FORMS_ACCESS_KEY || 'YOUR_WEB3FORMS_ACCESS_KEY_HERE';
+---
+
+<div class="apply-form">
+  <h4>Or send us a message directly</h4>
+  <form id="apply-form" action="https://api.web3forms.com/submit" method="POST">
+    <input type="hidden" name="access_key" value={WEB3FORMS_ACCESS_KEY} />
+    <input type="hidden" name="subject" value="New Gain Global Networking application inquiry" />
+    <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off" />
+
+    <div class="form-grid">
+      <div>
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" placeholder="Jane Doe" required />
+      </div>
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="jane@company.com" required />
+      </div>
+      <div>
+        <label for="profession">Profession</label>
+        <input type="text" id="profession" name="profession" placeholder="e.g. Real Estate Agent" required />
+      </div>
+      <div>
+        <label for="phone">Phone (optional)</label>
+        <input type="tel" id="phone" name="phone" placeholder="(555) 555-5555" />
+      </div>
+      <div class="full">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" placeholder="Tell us a bit about yourself and why you'd like to join." required></textarea>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button type="submit" class="btn btn-primary">Send Message</button>
+      <span class="form-status" id="apply-form-status"></span>
+    </div>
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById('apply-form') as HTMLFormElement | null;
+  const status = document.getElementById('apply-form-status');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!status) return;
+
+    status.textContent = 'Sending...';
+    status.removeAttribute('data-state');
+
+    const formData = new FormData(form);
+    const key = formData.get('access_key');
+
+    if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY_HERE') {
+      status.textContent = 'Form is not fully set up yet — add a Web3Forms access key.';
+      status.setAttribute('data-state', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { Accept: 'application/json' },
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        status.textContent = "Thanks! We'll be in touch soon.";
+        status.setAttribute('data-state', 'success');
+        form.reset();
+      } else {
+        status.textContent = result.message || 'Something went wrong. Please try again.';
+        status.setAttribute('data-state', 'error');
+      }
+    } catch (error) {
+      status.textContent = 'Something went wrong. Please try again.';
+      status.setAttribute('data-state', 'error');
+    }
+  });
+</script>
