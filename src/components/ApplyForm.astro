@@ -9,10 +9,10 @@ const WEB3FORMS_ACCESS_KEY =
 ---
 
 <div class="apply-form">
-  <h4>Visiting, or ready to apply? Send us a note</h4>
+  <h4>Interested? Send us a note</h4>
   <form id="apply-form" action="https://api.web3forms.com/submit" method="POST">
     <input type="hidden" name="access_key" value={WEB3FORMS_ACCESS_KEY} />
-    <input type="hidden" name="subject" value="New Gain Global Networking application inquiry" />
+    <input type="hidden" name="subject" value="New interest inquiry — Gain Global Networking" />
     <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off" />
 
     <div class="form-grid">
@@ -34,9 +34,11 @@ const WEB3FORMS_ACCESS_KEY =
       </div>
       <div class="full">
         <label for="message">Message</label>
-        <textarea id="message" name="message" placeholder="Let us know if you'd like to visit a Tuesday meeting or you're ready to apply." required></textarea>
+        <textarea id="message" name="message" placeholder="Let us know if you'd like to visit a Tuesday meeting or just want to learn more." required></textarea>
       </div>
     </div>
+
+    <div class="h-captcha" data-captcha="true"></div>
 
     <div class="form-footer">
       <button type="submit" class="btn btn-primary">Send Message</button>
@@ -44,6 +46,8 @@ const WEB3FORMS_ACCESS_KEY =
     </div>
   </form>
 </div>
+
+<script src="https://web3forms.com/client/script.js" async defer></script>
 
 <script>
   const form = document.getElementById('apply-form') as HTMLFormElement | null;
@@ -61,6 +65,13 @@ const WEB3FORMS_ACCESS_KEY =
 
     if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY_HERE') {
       status.textContent = 'Form is not fully set up yet — add a Web3Forms access key.';
+      status.setAttribute('data-state', 'error');
+      return;
+    }
+
+    const hCaptchaResponse = form.querySelector<HTMLTextAreaElement>('textarea[name="h-captcha-response"]')?.value;
+    if (!hCaptchaResponse) {
+      status.textContent = 'Please complete the captcha before sending.';
       status.setAttribute('data-state', 'error');
       return;
     }
