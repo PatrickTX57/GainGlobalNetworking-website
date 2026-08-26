@@ -61,6 +61,22 @@ const WEB3FORMS_ACCESS_KEY =
     status.removeAttribute('data-state');
 
     const formData = new FormData(form);
+
+    // Fire-and-forget: also send this submission to our Airtable-backed n8n
+    // workflow, independent of the Web3Forms submission below. A failure here
+    // should never block the visitor's Web3Forms submission or the redirect
+    // to /thank-you.
+    fetch('https://bloomtx.app.n8n.cloud/webhook/gain-global-contact-form', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formData.get('name'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        message: formData.get('message'),
+        interestedIn: formData.get('profession'),
+      }),
+    }).catch(() => {});
     const key = formData.get('access_key');
 
     if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY_HERE') {
