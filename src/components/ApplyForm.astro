@@ -9,7 +9,7 @@ const WEB3FORMS_ACCESS_KEY =
 ---
 
 <div class="apply-form">
-  <h4>Or send us a message directly</h4>
+  <h4>Visiting, or ready to apply? Send us a note</h4>
   <form id="apply-form" action="https://api.web3forms.com/submit" method="POST">
     <input type="hidden" name="access_key" value={WEB3FORMS_ACCESS_KEY} />
     <input type="hidden" name="subject" value="New Gain Global Networking application inquiry" />
@@ -25,8 +25,8 @@ const WEB3FORMS_ACCESS_KEY =
         <input type="email" id="email" name="email" placeholder="jane@company.com" required />
       </div>
       <div>
-        <label for="profession">Profession</label>
-        <input type="text" id="profession" name="profession" placeholder="e.g. Real Estate Agent" required />
+        <label for="profession">Profession (optional)</label>
+        <input type="text" id="profession" name="profession" placeholder="e.g. Real Estate Agent" />
       </div>
       <div>
         <label for="phone">Phone (optional)</label>
@@ -34,7 +34,7 @@ const WEB3FORMS_ACCESS_KEY =
       </div>
       <div class="full">
         <label for="message">Message</label>
-        <textarea id="message" name="message" placeholder="Tell us a bit about yourself and why you'd like to join." required></textarea>
+        <textarea id="message" name="message" placeholder="Let us know if you'd like to visit a Tuesday meeting or you're ready to apply." required></textarea>
       </div>
     </div>
 
