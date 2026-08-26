@@ -88,6 +88,7 @@ const WEB3FORMS_ACCESS_KEY =
         status.textContent = "Thanks! We'll be in touch soon.";
         status.setAttribute('data-state', 'success');
         form.reset();
+        window.location.href = '/thank-you';
       } else {
         status.textContent = result.message || 'Something went wrong. Please try again.';
         status.setAttribute('data-state', 'error');
