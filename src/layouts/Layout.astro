@@ -311,10 +311,16 @@ const {
   /* LEADERSHIP */
   .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
   .team-card { text-align: left; border-top: 2px solid var(--line-strong); padding-top: 18px; }
-  .team-card .avatar {
-    width: 64px; height: 64px; border-radius: 50%; margin-bottom: 16px;
+  .team-card .avatar-frame {
+    width: 128px; height: 128px; border-radius: 50%; margin-bottom: 16px;
     background: var(--navy);
-    display: block; object-fit: cover;
+    overflow: hidden; position: relative;
+  }
+  .team-card .avatar-frame img {
+    width: 100%; height: 100%; display: block; object-fit: cover;
+  }
+  .team-card .avatar-frame.avatar-patrick img {
+    transform: scale(1.55) translate(12%, -3%);
   }
   .team-card h4 { font-size: 16px; color: var(--navy); font-weight: 600; }
   .team-card .role { font-size: 12.5px; color: var(--forest); font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -333,6 +339,7 @@ const {
   /* CONTACT FORM */
   .apply-form { margin-top: 44px; padding-top: 40px; border-top: 1px solid rgba(246, 245, 241, 0.14); }
   .apply-form h4 { font-size: 18px; font-weight: 600; color: var(--white); margin-bottom: 18px; }
+  .ghl-embed-wrap { width: 100%; min-height: 720px; border-radius: var(--radius); overflow: hidden; background: rgba(246, 245, 241, 0.06); }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .form-grid .full { grid-column: 1 / -1; }
   .apply-form label {
