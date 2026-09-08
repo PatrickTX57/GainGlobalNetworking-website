@@ -29,12 +29,24 @@ const WEB3FORMS_ACCESS_KEY =
         <input type="email" id="email" name="email" placeholder="jane@company.com" required />
       </div>
       <div>
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" placeholder="(555) 555-5555" required />
+      </div>
+      <div>
         <label for="profession">Profession</label>
         <input type="text" id="profession" name="profession" placeholder="e.g. Real Estate Agent" required />
       </div>
       <div class="full">
         <label for="referred_by">Who referred you? (optional)</label>
         <input type="text" id="referred_by" name="referred_by" placeholder="Member or event name, if applicable" />
+      </div>
+      <div class="full consent-row">
+        <input type="checkbox" id="email_optin" name="email_optin" />
+        <label for="email_optin">Sign me up for email updates from GainGlobal Networking.</label>
+      </div>
+      <div class="full consent-row">
+        <input type="checkbox" id="sms_optin" name="sms_optin" />
+        <label for="sms_optin">By checking this box, I agree to receive SMS text messages from GainGlobal Networking (meeting reminders, event updates, and networking news) at the phone number provided above. Message frequency varies. Msg &amp; data rates may apply. Reply STOP to unsubscribe, HELP for help. Consent is not a condition of membership or attendance. View our <a href="/privacy" class="text-link">Privacy Policy</a>.</label>
       </div>
     </div>
 
@@ -46,6 +58,36 @@ const WEB3FORMS_ACCESS_KEY =
     </div>
   </form>
 </div>
+
+<style>
+  .consent-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .consent-row input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    margin-top: 3px;
+    flex-shrink: 0;
+    accent-color: var(--growth);
+  }
+  .consent-row label {
+    display: block;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(246, 245, 241, 0.75);
+    font-weight: 400;
+    margin-bottom: 0;
+  }
+  .consent-row label a {
+    text-decoration: underline;
+    color: rgba(246, 245, 241, 0.92);
+  }
+</style>
 
 <script src="https://web3forms.com/client/script.js" async defer></script>
 
@@ -73,8 +115,11 @@ const WEB3FORMS_ACCESS_KEY =
         firstName: formData.get('first_name'),
         lastName: formData.get('last_name'),
         email: formData.get('email'),
+        phone: formData.get('phone'),
         profession: formData.get('profession'),
         referredBy: formData.get('referred_by'),
+        emailOptIn: !!formData.get('email_optin'),
+        smsOptIn: !!formData.get('sms_optin'),
       }),
     }).catch(() => {});
     const key = formData.get('access_key');
