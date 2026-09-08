@@ -1,25 +1,117 @@
+---
+// Web3Forms access key.
+// Get a free key at https://web3forms.com (enter your email, no account needed)
+// and either paste it here, or set PUBLIC_WEB3FORMS_ACCESS_KEY as an environment
+// variable in Cloudflare Pages (Workers & Pages -> gain-global -> Settings ->
+// Environment variables) and it will be picked up automatically at build time.
+const WEB3FORMS_ACCESS_KEY =
+  import.meta.env.PUBLIC_WEB3FORMS_ACCESS_KEY || '5e90c2f3-6461-4453-9f6b-0d7cf12df6c1';
+---
+
 <div class="apply-form">
-  <div class="ghl-embed-wrap">
-    <iframe
-      src="https://ghl.gainglobalnetworking.com/widget/form/GdQXcHdSPKIiXiUP05H6"
-      style="width:100%;height:100%;border:none;border-radius:8px"
-      id="inline-GdQXcHdSPKIiXiUP05H6"
-      data-layout="{'id':'INLINE'}"
-      data-trigger-type="alwaysShow"
-      data-trigger-value=""
-      data-activation-type="alwaysActivated"
-      data-activation-value=""
-      data-deactivation-type="neverDeactivate"
-      data-deactivation-value=""
-      data-form-name="Guest Registration Form"
-      data-height="undefined"
-      data-layout-iframe-id="inline-GdQXcHdSPKIiXiUP05H6"
-      data-form-id="GdQXcHdSPKIiXiUP05H6"
-      data-cookie-consent="true"
-      data-cookie-consent-provider="auto"
-      title="Guest Registration Form"
-    ></iframe>
-  </div>
+  <h4>Interested? Send us a note</h4>
+  <form id="apply-form" action="https://api.web3forms.com/submit" method="POST">
+    <input type="hidden" name="access_key" value={WEB3FORMS_ACCESS_KEY} />
+    <input type="hidden" name="subject" value="New interest inquiry — Gain Global Networking" />
+    <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off" />
+
+    <div class="form-grid">
+      <div>
+        <label for="first_name">First Name</label>
+        <input type="text" id="first_name" name="first_name" placeholder="Jane" required />
+      </div>
+      <div>
+        <label for="last_name">Last Name</label>
+        <input type="text" id="last_name" name="last_name" placeholder="Doe" required />
+      </div>
+      <div>
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="jane@company.com" required />
+      </div>
+      <div>
+        <label for="profession">Profession</label>
+        <input type="text" id="profession" name="profession" placeholder="e.g. Real Estate Agent" required />
+      </div>
+      <div class="full">
+        <label for="referred_by">Who referred you? (optional)</label>
+        <input type="text" id="referred_by" name="referred_by" placeholder="Member or event name, if applicable" />
+      </div>
+    </div>
+
+    <div class="h-captcha" data-captcha="true"></div>
+
+    <div class="form-footer">
+      <button type="submit" class="btn btn-primary">Send Message</button>
+      <span class="form-status" id="apply-form-status"></span>
+    </div>
+  </form>
 </div>
 
-<script src="https://ghl.gainglobalnetworking.com/js/form_embed.js"></script>
+<script src="https://web3forms.com/client/script.js" async defer></script>
+
+<script>
+  const form = document.getElementById('apply-form') as HTMLFormElement | null;
+  const status = document.getElementById('apply-form-status');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!status) return;
+
+    status.textContent = 'Sending...';
+    status.removeAttribute('data-state');
+
+    const formData = new FormData(form);
+
+    // Fire-and-forget: also send this submission to our Airtable-backed n8n
+    // workflow, independent of the Web3Forms submission below. A failure here
+    // should never block the visitor's Web3Forms submission or the redirect
+    // to /thank-you.
+    fetch('https://bloomtx.app.n8n.cloud/webhook/gain-global-contact-form', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: formData.get('first_name'),
+        lastName: formData.get('last_name'),
+        email: formData.get('email'),
+        profession: formData.get('profession'),
+        referredBy: formData.get('referred_by'),
+      }),
+    }).catch(() => {});
+    const key = formData.get('access_key');
+
+    if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY_HERE') {
+      status.textContent = 'Form is not fully set up yet — add a Web3Forms access key.';
+      status.setAttribute('data-state', 'error');
+      return;
+    }
+
+    const hCaptchaResponse = form.querySelector<HTMLTextAreaElement>('textarea[name="h-captcha-response"]')?.value;
+    if (!hCaptchaResponse) {
+      status.textContent = 'Please complete the captcha before sending.';
+      status.setAttribute('data-state', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { Accept: 'application/json' },
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        status.textContent = "Thanks! We'll be in touch soon.";
+        status.setAttribute('data-state', 'success');
+        form.reset();
+        window.location.href = '/thank-you';
+      } else {
+        status.textContent = result.message || 'Something went wrong. Please try again.';
+        status.setAttribute('data-state', 'error');
+      }
+    } catch (error) {
+      status.textContent = 'Something went wrong. Please try again.';
+      status.setAttribute('data-state', 'error');
+    }
+  });
+</script>
