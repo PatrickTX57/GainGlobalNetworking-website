@@ -1,0 +1,43 @@
+name: Update Next Meeting date
+
+# Runs every Tuesday. GitHub schedules use UTC, so there are two runs to cover
+# daylight saving: 14:00 UTC = 9 AM CDT (summer), 15:00 UTC = 9 AM CST (winter).
+# The script only changes the date on meeting day at/after 9 AM Central,
+# so the extra run (and off-week Tuesdays) make no changes.
+on:
+  schedule:
+    - cron: '0 14 * * 2'
+    - cron: '0 15 * * 2'
+  workflow_dispatch: # lets you run it manually from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: next-meeting
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Roll Next Meeting forward 2 weeks (on meeting day)
+        run: node scripts/update-next-meeting.mjs
+
+      - name: Commit and push if the date changed
+        run: |
+          if git diff --quiet; then
+            echo "No change to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/index.astro
+          git commit -m "Auto-update Next Meeting date"
+          git push
