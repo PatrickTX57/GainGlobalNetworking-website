@@ -80,7 +80,7 @@ const nMonth = MONTHS[next.getUTCMonth()];
 const out = src
   .replace(monthRe, `$1${nMonth.slice(0, 3).toUpperCase()}$3`)
   .replace(dayRe, `$1${nDay}$3`)
-  .replace(lineRe, `${DAYS[next.getUTCDay()]}, ${nMonth} ${nDay}${ordinal(nDay)}`);
+  .replace(new RegExp(lineRe.source, 'g'), `${DAYS[next.getUTCDay()]}, ${nMonth} ${nDay}${ordinal(nDay)}`);
 
 writeFileSync(FILE, out);
 console.log(`Updated Next Meeting: ${fmt(listed)} -> ${fmt(next)}`);
