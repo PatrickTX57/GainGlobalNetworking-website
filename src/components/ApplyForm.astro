@@ -1,18 +1,15 @@
 ---
-// Web3Forms access key.
-// Get a free key at https://web3forms.com (enter your email, no account needed)
-// and either paste it here, or set PUBLIC_WEB3FORMS_ACCESS_KEY as an environment
-// variable in Cloudflare Pages (Workers & Pages -> gain-global -> Settings ->
-// Environment variables) and it will be picked up automatically at build time.
-const WEB3FORMS_ACCESS_KEY =
-  import.meta.env.PUBLIC_WEB3FORMS_ACCESS_KEY || '5e90c2f3-6461-4453-9f6b-0d7cf12df6c1';
+// Cloudflare Turnstile site key (public — safe to ship in the page).
+// The matching SECRET key lives only in Cloudflare Pages as TURNSTILE_SECRET_KEY,
+// where functions/api/register.js uses it to check each submission.
+// Set PUBLIC_TURNSTILE_SITE_KEY in Cloudflare Pages to override this at build time.
+const TURNSTILE_SITE_KEY =
+  import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAFzXEgvv9kaTH4qe';
 ---
 
 <div class="apply-form">
   <h4>Guest Registration - Free</h4>
-  <form id="apply-form" action="https://api.web3forms.com/submit" method="POST">
-    <input type="hidden" name="access_key" value={WEB3FORMS_ACCESS_KEY} />
-    <input type="hidden" name="subject" value="New interest inquiry — Gain Global Networking" />
+  <form id="apply-form" action="/api/register" method="POST">
     <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off" />
 
     <div class="form-grid">
@@ -50,7 +47,13 @@ const WEB3FORMS_ACCESS_KEY =
       </div>
     </div>
 
-    <div class="h-captcha" data-captcha="true"></div>
+    <div
+      class="cf-turnstile turnstile-row"
+      data-sitekey={TURNSTILE_SITE_KEY}
+      data-action="guest-registration"
+      data-theme="dark"
+      data-size="flexible"
+    ></div>
 
     <div class="form-footer">
       <button type="submit" class="btn btn-primary">Send Message</button>
@@ -83,80 +86,75 @@ const WEB3FORMS_ACCESS_KEY =
     font-weight: 400;
     margin-bottom: 0;
   }
+  .turnstile-row {
+    margin-top: 20px;
+    max-width: 400px;
+  }
   .consent-row label a {
     text-decoration: underline;
     color: rgba(246, 245, 241, 0.92);
   }
 </style>
 
-<script src="https://web3forms.com/client/script.js" async defer></script>
+<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
 <script>
   const form = document.getElementById('apply-form') as HTMLFormElement | null;
   const status = document.getElementById('apply-form-status');
+  const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+  type TurnstileApi = { reset: (el?: string | HTMLElement) => void };
+  const resetTurnstile = () => {
+    const ts = (window as unknown as { turnstile?: TurnstileApi }).turnstile;
+    const widget = form?.querySelector<HTMLElement>('.cf-turnstile');
+    if (ts && widget) ts.reset(widget);
+  };
+
+  const showError = (message: string) => {
+    if (!status) return;
+    status.textContent = message;
+    status.setAttribute('data-state', 'error');
+  };
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!status) return;
 
-    status.textContent = 'Sending...';
-    status.removeAttribute('data-state');
-
     const formData = new FormData(form);
 
-    // Fire-and-forget: also send this submission to our Airtable-backed n8n
-    // workflow, independent of the Web3Forms submission below. A failure here
-    // should never block the visitor's Web3Forms submission or the redirect
-    // to /thank-you.
-    fetch('https://bloomtx.app.n8n.cloud/webhook/gain-global-contact-form', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        firstName: formData.get('first_name'),
-        lastName: formData.get('last_name'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        profession: formData.get('profession'),
-        referredBy: formData.get('referred_by'),
-        emailOptIn: !!formData.get('email_optin'),
-        smsOptIn: !!formData.get('sms_optin'),
-      }),
-    }).catch(() => {});
-    const key = formData.get('access_key');
-
-    if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY_HERE') {
-      status.textContent = 'Form is not fully set up yet — add a Web3Forms access key.';
-      status.setAttribute('data-state', 'error');
+    if (!formData.get('cf-turnstile-response')) {
+      showError('Please complete the security check before sending.');
       return;
     }
 
-    const hCaptchaResponse = form.querySelector<HTMLTextAreaElement>('textarea[name="h-captcha-response"]')?.value;
-    if (!hCaptchaResponse) {
-      status.textContent = 'Please complete the captcha before sending.';
-      status.setAttribute('data-state', 'error');
-      return;
-    }
+    status.textContent = 'Sending...';
+    status.removeAttribute('data-state');
+    if (button) button.disabled = true;
 
     try {
+      // functions/api/register.js checks the Turnstile token, then passes the
+      // submission on to n8n (Airtable, Google Sheet, Mailchimp, Salesmsg).
       const response = await fetch(form.action, {
         method: 'POST',
-        body: formData,
-        headers: { Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(Object.fromEntries(formData)),
       });
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
-      if (result.success) {
+      if (response.ok && result.success) {
         status.textContent = "Thanks! We'll be in touch soon.";
         status.setAttribute('data-state', 'success');
         form.reset();
         window.location.href = '/thank-you';
-      } else {
-        status.textContent = result.message || 'Something went wrong. Please try again.';
-        status.setAttribute('data-state', 'error');
+        return;
       }
+      showError(result.message || 'Something went wrong. Please try again.');
     } catch (error) {
-      status.textContent = 'Something went wrong. Please try again.';
-      status.setAttribute('data-state', 'error');
+      showError('Something went wrong. Please try again.');
     }
+
+    // Turnstile tokens are single-use, so get a fresh one before a retry.
+    resetTurnstile();
+    if (button) button.disabled = false;
   });
 </script>
