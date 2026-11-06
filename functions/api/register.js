@@ -12,6 +12,10 @@
 //                                             so n8n can ignore anything that
 //                                             didn't come through this function
 //   N8N_WEBHOOK_URL       (Text, optional)    overrides the default webhook URL
+//   GGN_APP_WEBHOOK_URL   (Text, optional)    the Gain Global member app's guest
+//                                             endpoint; when set, every verified
+//                                             submission is also forwarded there
+//   GGN_APP_FORM_SECRET   (Secret, optional)  sent to the app as X-GGN-Form-Secret
 
 const DEFAULT_N8N_WEBHOOK_URL =
   'https://bloomtx.app.n8n.cloud/webhook/gain-global-contact-form';
@@ -118,6 +122,24 @@ export async function onRequestPost({ request, env }) {
   } catch (err) {
     console.error('Forwarding to n8n failed', err);
     return json({ success: false, message: 'Something went wrong. Please try again, or email info@gainglobalnetworking.com.' }, 502);
+  }
+
+  // --- Also register the guest in the Gain Global member app (optional) ---
+  // Best effort: the visitor already got their confirmation path above, so a
+  // hiccup here is logged, not surfaced.
+  if (env.GGN_APP_WEBHOOK_URL) {
+    const appHeaders = { 'Content-Type': 'application/json' };
+    if (env.GGN_APP_FORM_SECRET) appHeaders['X-GGN-Form-Secret'] = env.GGN_APP_FORM_SECRET;
+    try {
+      const res = await fetch(env.GGN_APP_WEBHOOK_URL, {
+        method: 'POST',
+        headers: appHeaders,
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) console.error(`GGN app responded ${res.status}`);
+    } catch (err) {
+      console.error('Forwarding to the GGN app failed', err);
+    }
   }
 
   return json({ success: true });
